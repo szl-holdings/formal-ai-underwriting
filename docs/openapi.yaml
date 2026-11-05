@@ -1,0 +1,160 @@
+openapi: 3.1.0
+info:
+  title: SZL Holdings Model Inference API
+  description: |
+    Provably auditable AI inference from estate-trained models.
+    
+    Every response comes from a model trained on the SZL Holdings estate corpus
+    (4,855+ examples from 126 repos, doctrine texts, and the abstention counterweight).
+    Every model carries a cryptographic proof receipt showing exactly what data trained it.
+    
+    **Payment:** x402 per-call. No signup, no API key. The payment IS the credential.
+  version: 1.0.0
+  contact:
+    name: Stephen P. Lutar Jr.
+    email: betterwithage@a-11-oy.com
+    url: https://a-11-oy.com
+
+servers:
+  - url: https://api.a-11-oy.com
+    description: Production (x402 monetized)
+
+paths:
+  /v1/inference:
+    post:
+      summary: Run inference on an estate-trained model
+      description: |
+        Sends a prompt to the estate-trained model and returns the generated response.
+        The model has studied the entire estate (126 repos, doctrine, formulas).
+        
+        **Pricing:** $0.05 per call (x402). Verified bots: $0.10.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prompt]
+              properties:
+                prompt:
+                  type: string
+                  description: The input prompt
+                max_tokens:
+                  type: integer
+                  default: 256
+                  description: Maximum tokens to generate
+                model:
+                  type: string
+                  default: "SZL-Nemotron-Mini-4B-Estate-v1"
+                  description: Model to use
+                  enum:
+                    - "SZL-Nemotron-Mini-4B-Estate-v1"
+                    - "SZL-Khipu-1.5B-estate-sft-v1"
+                    - "szl-receiptagent-qwen35-0.8b-dpo-v2"
+      responses:
+        "200":
+          description: Successful inference
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: Generated text
+                  model:
+                    type: string
+                  receipt:
+                    type: object
+                    description: Training provenance receipt
+                  truth_label:
+                    type: string
+                    description: MEASURED/UNAVAILABLE/etc
+        "402":
+          description: Payment required (x402)
+      tags: [inference]
+
+  /v1/chat:
+    post:
+      summary: Chat with the Nemotron Estate flagship
+      description: |
+        OpenAI-compatible chat endpoint using the estate study model.
+        This model has read every repo README, the thesis, and the doctrine.
+        
+        **Pricing:** $0.02 per call (x402).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [messages]
+              properties:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum: [system, user, assistant]
+                      content:
+                        type: string
+      responses:
+        "200":
+          description: Chat response
+        "402":
+          description: Payment required
+      tags: [chat]
+
+  /v1/models:
+    get:
+      summary: List available models
+      description: Returns all estate-trained models with their proof receipts.
+      responses:
+        "200":
+          description: Model list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        proof_receipt:
+                          type: string
+                          description: Link to cryptographic training receipt
+                        truth_label:
+                          type: string
+      tags: [models]
+
+components:
+  schemas:
+    ProofReceipt:
+      type: object
+      description: Cryptographic proof of training data lineage
+      properties:
+        training_run_id:
+          type: string
+        heartbeat_log:
+          type: string
+          description: Link to wave-logs dataset entry
+        datasets:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              examples:
+                type: integer
+              provenance:
+                type: string
+        model_card:
+          type: string
+          description: Link to HF model card with proof banner
