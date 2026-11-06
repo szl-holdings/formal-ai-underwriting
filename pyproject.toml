@@ -9,15 +9,48 @@ description = "Provably auditable AI models as a service — the UL certificatio
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Stephen Lutar", email = "stephen@szlholdings.com" }]
+keywords = [
+  "ai-certification",
+  "model-audit",
+  "pac-bayes",
+  "hoeffding",
+  "risk-bound",
+  "formal-verification",
+  "regulatory-compliance",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Mathematics",
+]
+# certification/bounds.py is stdlib-only.
 dependencies = []
+
+[project.optional-dependencies]
+# The suite is plain unittest, so `python -m unittest discover -s tests` needs
+# nothing installed; pytest is the optional runner.
+test = ["pytest>=8"]
 
 [project.urls]
 Homepage = "https://a-11-oy.com"
-Repository = "https://github.com/szl-holdings/formal-ai-underwriting"
+Source = "https://github.com/szl-holdings/formal-ai-underwriting"
+Issues = "https://github.com/szl-holdings/formal-ai-underwriting/issues"
 
 [tool.setuptools]
-packages = []
+# Ship the one importable package. `packages = []` (the previous value) built
+# a wheel with no code in it.
+packages = ["certification"]
 
 [tool.ruff]
 line-length = 120
@@ -25,4 +58,5 @@ target-version = "py311"
 extend-exclude = ["build", "dist", ".venv", "node_modules"]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "8.0"
+testpaths = ["tests"]

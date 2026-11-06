@@ -3,8 +3,32 @@
 ## Purpose
 
 ISO/IEC 42001 is the first certifiable AI management system standard. This document
-maps the estate's existing artifacts to the standard's requirements, demonstrating
-that the audit package already exists in the estate's public receipts.
+maps the estate's existing artifacts to the standard's requirements, showing where
+evidence for each clause already exists in the estate's receipts. It is a mapping,
+not an audit, and some of the receipts it cites are not public yet (see below).
+
+## Status and evidence availability (read first)
+
+- **Not certified, and no clause family implemented yet.** The estate's internal gap
+  analysis, [`platform/docs/compliance/ISO_42001_GAP.md`](https://github.com/szl-holdings/platform/blob/main/docs/compliance/ISO_42001_GAP.md)
+  (assessed 2026-07-25), rates Clause 4 **OPEN** and Clauses 5–10 **PARTIAL**, marks no
+  clause family IMPLEMENTED, and records that no AIMS scope has been approved. Read this
+  mapping together with that analysis.
+- **Evidence availability, checked 2026-11-06** (Hugging Face Hub API without credentials;
+  GitHub repository visibility):
+
+| Evidence cited below | Location | Public? |
+|---|---|---|
+| Governed validation certificates (`governed-validation-2026-11-06.json`, v2, v3, incl. the NO_GO), fleet-eval, doctrine-abstention eval, load-test and chain-test receipts | HF dataset `SZLHOLDINGS/model-eval-receipts` | **No** — private (HTTP 401) |
+| Heartbeat / wave logs | HF dataset `SZLHOLDINGS/wave-logs` | **No** — private (HTTP 401) |
+| Training corpus and DPO counterweight pairs (`estate-knowledge-corpus-v1`, `doctrine-abstention-dpo-v2`) | HF datasets under `SZLHOLDINGS` | **No** — private (HTTP 401) |
+| Estate-trained models and their cards (e.g. `SZL-Nemotron-Mini-4B-Estate-v1`) | HF models under `SZLHOLDINGS` | Yes |
+| Investor one-pager (`investor/ONE_PAGER.md`) | GitHub `szl-holdings/szl-papers` | Yes |
+| Formula atlas (`formula_atlas.v1.json`) | GitHub `szl-holdings/szl-formulas` | Yes |
+| Lean proofs | GitHub `szl-holdings/lutar-lean` | Yes |
+
+  Until the private datasets are published or shared with the certification body, the
+  statements below that call these receipts public describe intent, not current state.
 
 ## Mapping: ISO 42001 clauses → estate artifacts
 
@@ -38,8 +62,8 @@ that the audit package already exists in the estate's public receipts.
 |---|---|
 | Resources | A6000 nodes on Massed Compute; Cloudflare edge; HF Hub for distribution — all documented in the wave receipts |
 | Competence | The formula atlas (21 executable formulas, 30 attributed, 8 Lean-proven) — the mathematical competence of the system |
-| Awareness | The honesty doctrine (every model card carries it); the NO_GO certificate (the estate publicly fails itself) |
-| Documented information | Every training wave, every eval, every governed decision produces a receipt published to public datasets |
+| Awareness | The honesty doctrine (every model card carries it); the NO_GO certificate (the estate fails itself on the record; the certificate is in the private `model-eval-receipts` dataset) |
+| Documented information | Every training wave, every eval, every governed decision produces a receipt published to Hugging Face datasets (several private as of 2026-11-06; see the table above) |
 
 ### Clause 8: Operation
 
@@ -78,17 +102,25 @@ that the audit package already exists in the estate's public receipts.
 - **Statistical bounds with confidence**: The McAllester/Hoeffding bounds give computed
   risk bounds with stated confidence levels. ISO 42001 requires risk management; the
   estate quantifies it.
-- **Public self-failure**: The estate publishes its own NO_GO certificates. ISO 42001
-  doesn't require transparency about failures — the estate does it anyway.
+- **Self-failure on the record**: The estate records its own NO_GO certificates. ISO 42001
+  doesn't require transparency about failures — the estate does it anyway (the certificates
+  become public once `SZLHOLDINGS/model-eval-receipts` is published; it is private as of 2026-11-06).
 
 ## Path to certification
 
+0. Close the gaps in the internal gap analysis first. In its words, certification is targeted
+   "only after the organization has approved an AIMS scope, operated the system long enough to
+   produce evidence, completed an internal audit and management review, closed material
+   nonconformities, and authorized an external certification engagement."
 1. Engage an accredited certification body (BS ISO/IEC 42006:2025 qualified auditors)
 2. Submit this audit package (the receipts ARE the evidence)
 3. Stage 1 audit: documentation review (this mapping)
 4. Stage 2 audit: implementation review (the live systems)
 5. Certification: 3-year cycle, annual surveillance
 
-**Estimated readiness: the estate is 60-70% aligned** per the published crosswalks
-between NIST AI RMF and ISO 42001. The remaining 30-40% is formal documentation
-of processes that already exist in practice.
+**Estimated readiness: 60-70% (unaudited self-estimate).** The published crosswalks
+between NIST AI RMF and ISO 42001 map clauses between the two frameworks; they do not
+measure this estate, and no scored assessment behind the figure is published. The internal
+gap analysis linked above marks no clause family as implemented and lists open processes,
+not only documentation (an approved AIMS scope, AI impact assessments, an internal audit
+programme, management reviews).

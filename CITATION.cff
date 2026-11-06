@@ -3,7 +3,7 @@ message: If you use this software, please cite it using the metadata from this f
 type: software
 title: szl-holdings/formal-ai-underwriting — Provably auditable AI models as a service
 version: 0.1.0
-date-released: '2026-11-06'
+date-released: '2026-11-05'
 license: Apache-2.0
 url: https://a-11-oy.com
 repository-code: https://github.com/szl-holdings/formal-ai-underwriting

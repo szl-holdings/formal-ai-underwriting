@@ -7,28 +7,6 @@
 
 ---
 
-
-## 5. Statistical Risk Bound (MEASURED)
-
-**Sample:** [n] evaluation probes, [errors] failures (receipt: [eval_receipt_link])
-
-**Hoeffding bound (distribution-free, PROVEN):**
-- With confidence [1-delta], the true failure rate is at most **[hoeffding_bound]**
-- Formula: P(true_risk <= emp_risk + sqrt(ln(1/delta)/(2n))) >= 1-delta
-
-**PAC-Bayes bound (SORRY(PACBayes) — Lean obligation open, carried verbatim):**
-- With KL=0 (prior = posterior): **[pac_bayes_bound]**; tighter with the measured
-  KL to a declared prior policy
-- Formula: R(Q) <= R_hat + sqrt((KL + ln(2*sqrt(n)/delta))/(2n))
-
-**Honesty:** the bound certifies the arithmetic on the measured sample, not the
-truth of the inputs. This is one certificate axis; the Lambda-spine gate vetoes
-on any failed measured check.
-
-```bash
-python -m certification.bounds [errors] [n]
-```
-
 ## 1. Training Data Lineage
 
 **Khipu Receipt Chain:**
@@ -51,7 +29,8 @@ python -m certification.bounds [errors] [n]
 - Kernel: locked-8 (F1, F4, F7, F11, F12, F18, F19, F22) at commit c7c0ba17
 - Coherence decay theorem: [Wave24] verified
 - Kleene LFP theorem: [Wave25/26] verified
-- All proofs: sorry-free, Lean-core axioms only
+- All locked-8 proofs: sorry-free, Lean-core axioms only (the section 5 bounds are
+  outside the locked-8 and carry their own proof status)
 
 **Doctrine Abstention Evaluation:**
 - Eval receipt: [eval_receipt_link]
@@ -59,7 +38,7 @@ python -m certification.bounds [errors] [n]
 - Fabrication incidents: [num_incidents] (must be 0 for certification)
 - Truth-label compliance: [rate]%
 
-## 3. Model Expiry Guarantee
+## 3. Model Expiry Guarantee (advisory — Conjecture 1, not a proven bound)
 
 **Lambda-v5 Coherence Decay (Conjecture 1, advisory):**
 - Expected coherence decay horizon: [months]
@@ -81,7 +60,32 @@ python -m certification.bounds [errors] [n]
 - Model card: [card_link]
 - HF repository: [hf_link]
 
-## 5. Certification Statement
+## 5. Statistical Risk Bound (MEASURED)
+
+**Sample:** [n] evaluation probes, [errors] failures (receipt: [eval_receipt_link])
+
+**Hoeffding bound (distribution-free; PROOF-STATUS `PROVEN(MomentSubGaussian)` — the
+Lean proof is conditional on the named axiom `MomentSubGaussian`, carried verbatim):**
+- With confidence [1-delta], the true failure rate is at most **[hoeffding_bound]**
+- Formula: P(true_risk <= emp_risk + sqrt(ln(1/delta)/(2n))) >= 1-delta
+
+**PAC-Bayes bound (`SORRY(PACBayes)` — Lean obligation open, carried verbatim):**
+- With KL=0 (prior = posterior): **[pac_bayes_bound]**, shown for reference only. The
+  bound is monotone increasing in KL, so a measured KL > 0 only loosens it, and on the
+  same sample it is never tighter than the Hoeffding bound above.
+- Formula: R(Q) <= R_hat + sqrt((KL + ln(2*sqrt(n)/delta))/(2n))
+
+**Honesty:** the bound certifies the arithmetic on the measured sample, not the
+truth of the inputs. It is a statement about the true failure rate only if the [n]
+probes are i.i.d. draws from the distribution this certificate covers and the model
+was fixed before they were drawn; for a curated probe set it summarises that set.
+This is one certificate axis; the Lambda-spine gate vetoes on any failed measured check.
+
+```bash
+python -m certification.bounds [errors] [n]    # delta = 0.05
+```
+
+## 6. Certification Statement
 
 This model has been certified by SZL Holdings LLC as meeting the Formal AI Underwriting standard:
 - [ ] Training data lineage cryptographically verified

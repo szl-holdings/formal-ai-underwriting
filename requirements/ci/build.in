@@ -1,0 +1,5 @@
+# Build backend for the "package" job in .github/workflows/ci.yml.
+# Keep in step with [build-system] requires in pyproject.toml.
+# Regenerate build.txt with:
+#   uv pip compile --generate-hashes --python-version 3.12 requirements/ci/build.in -o requirements/ci/build.txt
+setuptools>=77
