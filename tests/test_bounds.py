@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """Regression tests for the statistical-bound claim semantics (Phase A B1/B2)."""
-import math, sys, unittest
-sys.path.insert(0, ".")
+import math
+import unittest
+
+# Import the package normally: either installed (`pip install -e .[test]`) or
+# from the repository root, which `python -m unittest` / `python -m pytest`
+# put on sys.path. No CWD-relative sys.path edits.
 from certification.bounds import certify_risk, pac_bayes_mcallester
 
 
