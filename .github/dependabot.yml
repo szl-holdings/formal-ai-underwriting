@@ -4,7 +4,14 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-  # pip is omitted on purpose. The Python in this repo (certification/bounds.py
-  # and its tests) is stdlib-only and there is no requirements.txt or
-  # pyproject.toml. A pip entry makes the Dependabot updater fail with
-  # "No files found in /" (see Dependabot run 42129339952 / #1684152451).
+
+  # Hash-pinned build backend used by the CI "package" job
+  # (requirements/ci/build.in -> build.txt, `uv pip compile --generate-hashes`).
+  # The package itself has no runtime dependencies (pyproject.toml
+  # `dependencies = []`), so the repository root is not watched. The earlier
+  # root-level pip entry failed with "No files found in /" (Dependabot run
+  # 42129312462) because the repository then had no pip manifest at all.
+  - package-ecosystem: "pip"
+    directory: "/requirements/ci"
+    schedule:
+      interval: "weekly"
