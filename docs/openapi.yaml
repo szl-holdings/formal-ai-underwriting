@@ -14,7 +14,9 @@ info:
     Every model carries a cryptographic proof receipt showing exactly what data trained it
     (training logs: the SZLHOLDINGS/wave-logs dataset, private as of 2026-11-06).
     
-    **Payment:** x402 per-call. No signup, no API key. The payment IS the credential.
+    **Payment:** x402 per call on the paths the Cloudflare Monetization Gateway charges
+    (docs/pricing.md, generated from the szl-gov price catalog). Whether the origin serves a
+    paid caller without its own credential has not been verified.
   version: 1.0.0
   contact:
     name: Stephen P. Lutar Jr.
@@ -23,7 +25,7 @@ info:
 
 servers:
   - url: https://api.a-11-oy.com
-    description: Production (x402 monetized)
+    description: Production host; per-call prices are listed in docs/pricing.md
 
 paths:
   /v1/inference:
@@ -35,7 +37,8 @@ paths:
         training time plus thesis and doctrine texts (see its model card); the other
         models' training data is listed on their cards.
         
-        **Pricing:** $0.05 per call (x402). Verified bots: $0.10.
+        **Pricing:** not offered yet. Both gateway rules for `/v1/inference/` are disabled
+        (rules export of 2026-11-06), so the gateway charges and quotes no price here.
       requestBody:
         required: true
         content:
@@ -89,7 +92,9 @@ paths:
         OpenAI-compatible chat endpoint using the estate study model.
         This model has read every repo README, the thesis, and the doctrine.
         
-        **Pricing:** $0.02 per call (x402).
+        **Pricing:** the gateway charges $0.02 (20000 atomic USDC, exact) on paths under
+        `/v1/chat/` on every a-11-oy.com host. This bare `/v1/chat` path is outside that
+        prefix, so the gateway does not charge it.
       requestBody:
         required: true
         content:
