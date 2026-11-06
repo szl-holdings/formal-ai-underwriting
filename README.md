@@ -70,3 +70,5 @@ Apache-2.0
 
 Part of the [SZL Holdings](https://github.com/szl-holdings) governed estate.
 **Control before action. Evidence after.**
+
+Estate on Hugging Face: models, datasets and Spaces are published under the [SZLHOLDINGS](https://huggingface.co/SZLHOLDINGS) org.

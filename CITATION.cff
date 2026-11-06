@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using the metadata from this file.
+type: software
+title: szl-holdings/formal-ai-underwriting — Provably auditable AI models as a service
+version: 0.1.0
+date-released: '2026-11-06'
+license: Apache-2.0
+url: https://a-11-oy.com
+repository-code: https://github.com/szl-holdings/formal-ai-underwriting
+authors:
+- family-names: Lutar
+  given-names: Stephen P.
+  name-suffix: Jr.
+  orcid: https://orcid.org/0009-0001-0110-4173
+  affiliation: SZL Holdings
+keywords:
+- abstention-guarantee
+- ai-certification
+- eu-ai-act
+- fda-compliance
+- formal-verification
+- khipu-receipts
+- lean4
+- model-audit
+- model-expiry
+- regulatory-compliance
+- training-provenance
+- x402
