@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""formal_ai_underwriting.certification.bounds — statistical risk bounds for model certificates.
+"""certification.bounds — statistical risk bounds for model certificates (formal-ai-underwriting).
 
-Cherry-picked from szl-holdings/szl-formulas (formula_atlas.v1.json):
+Adapted from szl-holdings/szl-formulas (torch-ext/szl_formulas/_formulas.py;
+proof statuses carried verbatim from formula_atlas.v1.json):
   * pac_bayes_mcallester — PROOF-STATUS: SORRY(PACBayes)
-  * hoeffding_tail       — PROOF-STATUS: PROVEN(Hoeffding)
+  * hoeffding_tail       — PROOF-STATUS: PROVEN(MomentSubGaussian)
+
+hoeffding_tail here is the one-sided bound exp(-2*n*t^2); the atlas function
+is the two-sided min(1, 2*exp(-2*n*t^2)). Its Lean counterpart is
+szl-holdings/lutar-lean `hoeffding_mgf_tail_bound` (Lutar/PACBayes.lean), which
+proves the one-sided tail conditional on the retained axiom `MomentSubGaussian`.
 
 These are the mathematical backbone of the certification product: a model
 certificate that carries a computed generalization bound from its measured
@@ -12,7 +18,14 @@ evaluation sample, with the formula provenance attached.
 Honesty contract:
   * The bound is computed from caller-supplied measured inputs; it certifies
     the arithmetic, not the truth of the inputs.
+  * As a statement about the true failure rate, the bound assumes the n probes
+    are i.i.d. draws from the distribution the certificate speaks about and
+    that the model was fixed before they were drawn (not tuned or selected on
+    them). For a curated or adversarial probe set it summarises that set only.
   * A SORRY proof-status is carried verbatim: the Lean obligation is open.
+    PROVEN(MomentSubGaussian) is conditional on that named Lean axiom.
+  * Invalid inputs raise ValueError; nothing is clamped and no NaN bound is
+    returned.
   * Nothing here claims the model is safe; the bound is one certificate axis
     under the Lambda-spine gate, where a single failed measured check vetoes.
 
@@ -64,10 +77,14 @@ def pac_bayes_mcallester(empirical_risk: float, kl: float, n: int, delta: float)
 def hoeffding_tail(t: float, n: int) -> dict:
     """P(mean - E[X] >= t) <= exp(-2*n*t^2).
 
-    PROOF-STATUS: PROVEN(Hoeffding) — carried verbatim from the source atlas.
+    One-sided Hoeffding bound (Hoeffding 1963, Thm 2) for n i.i.d. losses in
+    [0,1]. The mirror tail P(E[X] - mean >= t) has the same bound; that is the
+    tail certify_risk relies on ("true risk <= empirical risk + t").
+    PROOF-STATUS: PROVEN(MomentSubGaussian) — carried verbatim from the source
+    atlas; the Lean proof is conditional on the axiom MomentSubGaussian.
     """
-    if not _real(t) or t < 0:
-        raise ValueError("t must be a non-negative real")
+    if not _real(t) or math.isnan(t) or t < 0:
+        raise ValueError("t must be a non-negative real (NaN is not a number)")
     if not isinstance(n, int) or isinstance(n, bool) or n <= 0:
         raise ValueError("n must be a positive int")
     value = math.exp(-2.0 * n * t * t)
@@ -75,7 +92,7 @@ def hoeffding_tail(t: float, n: int) -> dict:
         "formula": "P(mean - E[X] >= t) <= exp(-2*n*t^2)",
         "inputs": {"t": t, "n": n},
         "bound": value,
-        "proof_status": "PROVEN(Hoeffding)",
+        "proof_status": "PROVEN(MomentSubGaussian)",
         "provenance": "szl-holdings/szl-formulas formula_atlas.v1.json",
     }
 
@@ -83,12 +100,19 @@ def hoeffding_tail(t: float, n: int) -> dict:
 def certify_risk(errors: int, n: int, delta: float = 0.05) -> dict:
     """Certify a model's risk bound from a measured 0/1 evaluation sample.
 
-    errors = number of failed probes; n = total probes; delta = confidence level.
-    Returns the Hoeffding bound (distribution-free) and, when a KL divergence
-    to a prior policy is available, the PAC-Bayes bound (tighter).
+    errors = number of failed probes; n = total probes; delta = 1 - confidence.
+    Returns the one-sided Hoeffding bound (distribution-free) and, for
+    reference, the PAC-Bayes bound at KL=0. The PAC-Bayes bound is monotone
+    increasing in KL and, on the same empirical risk, never tighter than the
+    Hoeffding bound for any KL >= 0 (ln(2*sqrt(n)/delta) > ln(1/delta)).
+    Raises ValueError on invalid inputs instead of returning a bound.
     """
     if not isinstance(errors, int) or isinstance(errors, bool) or errors < 0:
         raise ValueError("errors must be a non-negative int")
+    if not isinstance(n, int) or isinstance(n, bool):
+        raise ValueError("n must be an int (sample size)")
+    if not _real(delta) or not (0.0 < delta < 1.0):
+        raise ValueError("delta must be a real number in (0,1)")
     if n < 8:
         raise ValueError("n must be >= 8 for a meaningful bound")
     if errors > n:
