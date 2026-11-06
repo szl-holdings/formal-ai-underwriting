@@ -4,9 +4,15 @@ info:
   description: |
     Provably auditable AI inference from estate-trained models.
     
-    Every response comes from a model trained on the SZL Holdings estate corpus
-    (4,855+ examples from 126 repos, doctrine texts, and the abstention counterweight).
-    Every model carries a cryptographic proof receipt showing exactly what data trained it.
+    Every response comes from an estate-trained model whose Hugging Face model card lists
+    its exact training data. The default, SZL-Nemotron-Mini-4B-Estate-v1, was fine-tuned on
+    4,855 examples from six SZLHOLDINGS datasets (README documentation of the 126 repos
+    active at training time, thesis and doctrine texts, the quant persona, the abstention
+    counterweight and frontier SFT); SZL-Khipu-1.5B-estate-sft-v1 on 2,940 examples;
+    szl-receiptagent-qwen35-0.8b-dpo-v2 is a 62-pair DPO pass over
+    szl-receiptagent-qwen35-0.8b-sft-v3.
+    Every model carries a cryptographic proof receipt showing exactly what data trained it
+    (training logs: the SZLHOLDINGS/wave-logs dataset, private as of 2026-11-06).
     
     **Payment:** x402 per-call. No signup, no API key. The payment IS the credential.
   version: 1.0.0
@@ -25,7 +31,9 @@ paths:
       summary: Run inference on an estate-trained model
       description: |
         Sends a prompt to the estate-trained model and returns the generated response.
-        The model has studied the entire estate (126 repos, doctrine, formulas).
+        The default model has studied the README documentation of the 126 repos active at
+        training time plus thesis and doctrine texts (see its model card); the other
+        models' training data is listed on their cards.
         
         **Pricing:** $0.05 per call (x402). Verified bots: $0.10.
       requestBody:
