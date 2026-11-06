@@ -110,8 +110,12 @@ def certify_risk(errors: int, n: int, delta: float = 0.05) -> dict:
         "interpretation": (
             f"With confidence {1.0 - delta:.0%}, the true failure rate is at most "
             f"{emp + t:.4f} (Hoeffding, distribution-free). The PAC-Bayes bound with "
-            f"KL=0 (prior = posterior) is {pac['bound']:.4f}; a tighter bound requires "
-            f"the measured KL to a declared prior policy."
+            f"KL=0 (prior = posterior) is {pac['bound']:.4f}. Note: the PAC-Bayes "
+            f"bound is monotonically increasing in KL, so KL=0 is its tightest "
+            f"case; a measured KL>0 only loosens it. PAC-Bayes improves on "
+            f"Hoeffding only when KL + ln(2*sqrt(n)/delta) < ln(1/delta), which "
+            f"never holds at KL=0 for n >= 1; the reported KL=0 bound is "
+            f"therefore looser than Hoeffding and is shown for reference only."
         ),
         "honesty": (
             "The bound certifies the arithmetic on the measured sample, not the "
