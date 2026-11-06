@@ -1,0 +1,42 @@
+# Copyright 2026 SZL Holdings — SPDX-License-Identifier: Apache-2.0
+name: CI
+
+# The repository's only executable surface is the stdlib-only
+# certification/bounds.py module and its unittest regression suite. This
+# workflow proves that suite on every push and pull request so that
+# Dependabot's github-actions ecosystem has a real manifest to maintain.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Compile sources
+        run: python -m py_compile certification/bounds.py tests/test_bounds.py
+
+      - name: Run bound-semantics regression tests
+        run: python -m unittest discover -s tests -v
