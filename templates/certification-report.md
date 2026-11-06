@@ -7,6 +7,28 @@
 
 ---
 
+
+## 5. Statistical Risk Bound (MEASURED)
+
+**Sample:** [n] evaluation probes, [errors] failures (receipt: [eval_receipt_link])
+
+**Hoeffding bound (distribution-free, PROVEN):**
+- With confidence [1-delta], the true failure rate is at most **[hoeffding_bound]**
+- Formula: P(true_risk <= emp_risk + sqrt(ln(1/delta)/(2n))) >= 1-delta
+
+**PAC-Bayes bound (SORRY(PACBayes) — Lean obligation open, carried verbatim):**
+- With KL=0 (prior = posterior): **[pac_bayes_bound]**; tighter with the measured
+  KL to a declared prior policy
+- Formula: R(Q) <= R_hat + sqrt((KL + ln(2*sqrt(n)/delta))/(2n))
+
+**Honesty:** the bound certifies the arithmetic on the measured sample, not the
+truth of the inputs. This is one certificate axis; the Lambda-spine gate vetoes
+on any failed measured check.
+
+```bash
+python -m certification.bounds [errors] [n]
+```
+
 ## 1. Training Data Lineage
 
 **Khipu Receipt Chain:**
