@@ -113,7 +113,7 @@ built wheel ships the `certification` package and that its CLI runs from outside
 
 - **Certification per deployment:** $50k-$500k
 - **Annual audit retainer:** $20k-$100k
-- **Inference (x402, per-call):** $0.02-$0.10 via Cloudflare monetization (per-endpoint prices: [docs/pricing.md](docs/pricing.md))
+- **Inference (x402, per-call):** $0.02 per request on the chat, completions and responses paths the Cloudflare Monetization Gateway charges ([docs/pricing.md](docs/pricing.md))
 - **Retraining (subscription):** $100k+/yr per model with expiry guarantees
 
 ## The moat
@@ -133,7 +133,7 @@ OpenAI can't retrofit provenance into GPT-4. Anthropic's Constitutional AI is pr
 - [x] Khipu receipt-chain operational
 - [x] Lean 4 locked-8 kernel frozen
 - [x] Doctrine abstention eval pipeline proven (2 full cycles)
-- [x] x402 monetization live on Cloudflare (10 payment rules)
+- [x] x402 monetization on Cloudflare: 4 of 17 gateway rules enabled (a-11-oy.com: 4 of 15; a11oy.net: 0 of 2), per the rules export of 2026-11-06 with the 16:27 UTC change log applied ([prices](docs/pricing.md))
 - [x] 17+ models trained with proof receipts
 - [x] First certification report template ([templates/certification-report.md](templates/certification-report.md))
 - [ ] First pilot customer (pharma or legal)
