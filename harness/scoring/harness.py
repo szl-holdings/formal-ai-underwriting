@@ -47,16 +47,20 @@ def propagate_staleness(nodes: dict[str, dict], edges: list[tuple[str, str]]) ->
     for parent, child in edges:
         children.setdefault(parent, []).append(child)
     frontier = [n for n, meta in nodes.items() if meta.get("state") == "STALE"]
-    visited: set[str] = set()
+    # Roots are already visited: cycles must not rewrite their provenance.
+    visited: set[str] = set(frontier)
     while frontier:
         nxt = frontier.pop()
         for child in children.get(nxt, []):
             if child in visited:
                 continue
             visited.add(child)
-            nodes[child]["stale_from"] = nxt
-            if STATE_RANK[nodes[child].get("state", "FRESH")] < STATE_RANK["STALE"]:
+            state = nodes[child].get("state", "FRESH")
+            if STATE_RANK[state] < STATE_RANK["STALE"]:
                 nodes[child]["state"] = "STALE"
+                nodes[child]["stale_from"] = nxt
+            # Traverse structurally even when precedence preserves BLOCKED or
+            # ZERO_VETO, so descendants behind those nodes are still reached.
             frontier.append(child)
 
 
