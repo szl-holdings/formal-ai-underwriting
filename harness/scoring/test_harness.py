@@ -21,6 +21,42 @@ def test_staleness_propagates_to_descendants_not_ancestors():
     assert nodes["d"]["state"] == "FRESH"  # unrelated node untouched
 
 
+def test_staleness_cycle_seeds_roots_and_preserves_provenance():
+    """A cycle must not rewrite an originally stale root's provenance."""
+    nodes = {
+        "root": {"state": "STALE"},
+        "child": {"state": "FRESH"},
+    }
+    propagate_staleness(nodes, [("root", "child"), ("child", "root")])
+    assert nodes["root"]["state"] == "STALE"
+    assert "stale_from" not in nodes["root"]
+    assert nodes["child"]["state"] == "STALE"
+    assert nodes["child"]["stale_from"] == "root"
+
+
+def test_staleness_cycle_preserves_blocked_and_zero_veto_metadata():
+    """Higher-precedence nodes keep their state and are not mislabeled stale."""
+    nodes = {
+        "root": {"state": "STALE", "stale_from": "prior-root"},
+        "blocked": {"state": "BLOCKED"},
+        "zero": {"state": "ZERO_VETO"},
+        "fresh": {"state": "FRESH"},
+    }
+    propagate_staleness(
+        nodes,
+        [("root", "blocked"), ("blocked", "zero"),
+         ("zero", "root"), ("root", "fresh")],
+    )
+    assert nodes["root"]["state"] == "STALE"
+    assert nodes["root"]["stale_from"] == "prior-root"
+    assert nodes["blocked"]["state"] == "BLOCKED"
+    assert "stale_from" not in nodes["blocked"]
+    assert nodes["zero"]["state"] == "ZERO_VETO"
+    assert "stale_from" not in nodes["zero"]
+    assert nodes["fresh"]["state"] == "STALE"
+    assert nodes["fresh"]["stale_from"] == "root"
+
+
 def test_coverage_identity_gate_blocks_partial_and_extra():
     assert coverage_identity({"x", "y"}, {"x", "y"}) == "ADMITTED"
     assert coverage_identity({"x"}, {"x", "y"}).startswith("BLOCKED:missing")
