@@ -1,8 +1,7 @@
 """Contract tests for the protocol-independent harness scaffolding."""
 import pytest
-from harness import (ArmDeclaration, FixtureProvenance, coverage_identity,
-                     export_gate, harness_sha, propagate_staleness, resolve_state,
-                     STATE_PRECEDENCE)
+from harness import (FixtureProvenance, coverage_identity, export_gate,
+                     harness_sha, propagate_staleness, resolve_state)
 
 
 def test_state_precedence_highest_wins():
@@ -56,9 +55,24 @@ def test_export_gate_admits_declared_structural_fields():
     assert export_gate(rows, allowed) == rows
 
 
-def test_harness_sha_is_deterministic(tmp_path):
+def test_harness_sha_is_deterministic_and_content_sensitive(tmp_path):
     a = tmp_path / "a.py"; a.write_text("x = 1\n")
     b = tmp_path / "b.py"; b.write_text("y = 2\n")
-    assert harness_sha([a, b]) == harness_sha([b, a])
-    b.write_text("y = 3\n")  # any change changes the pin
-    assert harness_sha([a, b]) != harness_sha([a, tmp_path / "b.py"]) or True
+    first = harness_sha([a, b])
+    assert first == harness_sha([b, a])          # order-independent
+    assert len(first) == 64                      # a real sha256 pin
+    b.write_text("y = 3\n")                      # any change changes the pin
+    assert harness_sha([a, b]) != first
+
+
+def test_staleness_reaches_descendants_behind_blocked_intermediates():
+    """Structural traversal: a FRESH grandchild behind a BLOCKED child of a
+    stale node is still a descendant and must become STALE; the BLOCKED
+    intermediate keeps its higher-precedence state."""
+    nodes = {"a": {"state": "STALE"}, "b": {"state": "BLOCKED"},
+             "c": {"state": "FRESH"}, "d": {"state": "FRESH"}}
+    propagate_staleness(nodes, [("a", "b"), ("b", "c"), ("c", "d")])
+    assert nodes["b"]["state"] == "BLOCKED"      # precedence preserved
+    assert nodes["c"]["state"] == "STALE"         # reached through the blocked node
+    assert nodes["d"]["state"] == "STALE"         # and beyond it
+    assert nodes["c"]["stale_from"] == "b"

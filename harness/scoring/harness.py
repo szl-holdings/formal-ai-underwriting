@@ -15,10 +15,9 @@ leave with a non-opaque identifier.
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 # ---- the four states, with precedence (lowest to highest) ----
 # A record is in exactly one state; the highest applicable state wins.
@@ -36,18 +35,29 @@ def resolve_state(states: list[str]) -> str:
 
 # ---- staleness propagation to descendants ----
 def propagate_staleness(nodes: dict[str, dict], edges: list[tuple[str, str]]) -> None:
-    """A stale node makes every descendant stale (never the reverse)."""
+    """A stale node makes every descendant stale (never the reverse).
+
+    The traversal is STRUCTURAL: it follows the edge graph regardless of the
+    intermediate nodes' states, so a FRESH descendant behind a BLOCKED
+    intermediate is still reached. Precedence is respected at each node: a
+    descendant already BLOCKED or ZERO_VETO keeps its higher-precedence
+    state; anything below STALE is raised to STALE with its source recorded.
+    """
     children: dict[str, list[str]] = {}
     for parent, child in edges:
         children.setdefault(parent, []).append(child)
     frontier = [n for n, meta in nodes.items() if meta.get("state") == "STALE"]
+    visited: set[str] = set()
     while frontier:
         nxt = frontier.pop()
         for child in children.get(nxt, []):
+            if child in visited:
+                continue
+            visited.add(child)
+            nodes[child]["stale_from"] = nxt
             if STATE_RANK[nodes[child].get("state", "FRESH")] < STATE_RANK["STALE"]:
                 nodes[child]["state"] = "STALE"
-                nodes[child]["stale_from"] = nxt
-                frontier.append(child)
+            frontier.append(child)
 
 
 # ---- coverage identity as a gate ----
