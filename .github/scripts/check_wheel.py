@@ -4,8 +4,8 @@
 Usage: python .github/scripts/check_wheel.py [DIST_DIR]
 
 Exits non-zero when DIST_DIR does not hold exactly one formal_ai_underwriting wheel, when that wheel is
-missing certification/__init__.py or certification/bounds.py, or when it contains files from tests/.
-(Until 2026-11-06 the wheel was built with `packages = []` and shipped no code at all.)
+missing an executable package file, or when it contains files from tests/. (Until 2026-11-06 the wheel was
+built with `packages = []` and shipped no code at all.)
 
 SPDX-License-Identifier: Apache-2.0
 """
@@ -15,7 +15,12 @@ import sys
 import zipfile
 from pathlib import Path
 
-REQUIRED = ("certification/__init__.py", "certification/bounds.py")
+REQUIRED = (
+    "certification/__init__.py",
+    "certification/bounds.py",
+    "payments/__init__.py",
+    "payments/paycheck.py",
+)
 
 
 def check(dist_dir: Path) -> list[str]:

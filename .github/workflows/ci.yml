@@ -1,8 +1,8 @@
 # Copyright 2026 SZL Holdings — SPDX-License-Identifier: Apache-2.0
 name: CI
 
-# The repository's only executable surface is the stdlib-only
-# certification/bounds.py module and its unittest regression suite.
+# The repository's executable surfaces are the stdlib-only certification and
+# payments packages and their unittest regression suite.
 #   test:    runs that suite on every CPython the package supports
 #            (requires-python >= 3.11). Stdlib only: nothing is installed.
 #   package: builds the wheel with a hash-pinned build backend, checks that it
@@ -45,7 +45,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Compile sources
-        run: python -m py_compile certification/__init__.py certification/bounds.py tests/test_bounds.py
+        run: python -m py_compile certification/__init__.py certification/bounds.py payments/__init__.py payments/paycheck.py tests/test_bounds.py tests/test_paycheck.py
 
       - name: Run bound-semantics regression tests
         run: python -m unittest discover -s tests -v
@@ -75,7 +75,7 @@ jobs:
       - name: Build the wheel (no build isolation; backend pinned above)
         run: python -m pip wheel --disable-pip-version-check --no-deps --no-build-isolation --wheel-dir dist .
 
-      - name: Check the wheel ships the certification package
+      - name: Check the wheel ships the executable packages
         run: python .github/scripts/check_wheel.py dist
 
       - name: Install the wheel and run the documented CLI outside the checkout
@@ -85,3 +85,5 @@ jobs:
           python -c 'import certification.bounds as b; print("imported from", b.__file__)'
           python -m certification.bounds 3 48 > cert.json
           python -c 'import json, sys; c = json.load(open("cert.json")); ok = c.get("schema") == "szl.underwriting.risk-bound/v1" and c.get("measured") == {"errors": 3, "n": 48, "empirical_risk": 0.0625}; print("installed CLI", "OK" if ok else "MISMATCH", c.get("hoeffding_bound")); sys.exit(0 if ok else 1)'
+          python -m payments.paycheck --help > paycheck-help.txt
+          python -c 'from pathlib import Path; text = Path("paycheck-help.txt").read_text(); raise SystemExit(0 if "Run a fail-closed x402 PayCheck preflight" in text else 1)'

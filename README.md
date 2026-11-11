@@ -28,6 +28,10 @@ every report. The receipt chain, Lean proofs, training pipeline and inference se
 szl-holdings repositories and services; this repository does not implement or verify them (see
 [Proof boundary](#proof-boundary)).
 
+The optional [`payments.paycheck`](docs/paycheck.md) adapter adds a standard-library-only, fail-closed preflight for
+callers that already have an x402 quote. It checks the exact endpoint, amount, payout wallet and network before a
+caller signs a payment. It does not sign or submit payments and does not change certification evidence.
+
 ## What we certify
 
 | Certification | What it covers | How |
@@ -97,8 +101,11 @@ python -m pytest                             # runs tests/test_bounds.py
 python -m unittest discover -s tests -v      # same suite, standard library only, no install needed
 ```
 
+The optional x402 payment preflight is documented in [`docs/paycheck.md`](docs/paycheck.md). It is available as the
+`szl-paycheck-preflight` command after package installation.
+
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the suite on CPython 3.11–3.14 and checks that the
-built wheel ships the `certification` package and that its CLI runs from outside the checkout.
+built wheel ships both executable packages and that its CLIs run from outside the checkout.
 
 ## Target markets
 
