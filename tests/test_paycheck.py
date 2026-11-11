@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import threading
 import unittest
@@ -11,7 +12,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from payments.paycheck import (
     PaymentBlockedError,
     PaymentQuote,
+    QuoteError,
     check_payment,
+    fetch_payment_quote,
+    payment_quote_from_header,
     require_allow,
 )
 
@@ -19,6 +23,7 @@ from payments.paycheck import (
 class _Handler(BaseHTTPRequestHandler):
     payload: dict[str, object] = {"allow": True, "outcome": "allow", "reasons": ["test allow"]}
     requests: list[tuple[str, dict[str, str], dict[str, object]]] = []
+    quote_header: str | None = None
 
     def do_POST(self) -> None:  # noqa: N802
         length = int(self.headers.get("content-length", "0"))
@@ -31,6 +36,20 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(raw)))
         self.end_headers()
         self.wfile.write(raw)
+
+    def do_GET(self) -> None:  # noqa: N802
+        headers = {key.lower(): value for key, value in self.headers.items()}
+        self.__class__.requests.append((self.path, headers, {}))
+        if self.path == "/redirect":
+            self.send_response(302)
+            self.send_header("Location", "/v1/completions")
+            self.end_headers()
+            return
+        self.send_response(402)
+        if self.__class__.quote_header is not None:
+            self.send_header("PAYMENT-REQUIRED", self.__class__.quote_header)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def log_message(self, *_args: object) -> None:
         return
@@ -52,6 +71,7 @@ class TestPayCheckAdapter(unittest.TestCase):
     def setUp(self) -> None:
         _Handler.requests.clear()
         _Handler.payload = {"allow": True, "outcome": "allow", "reasons": ["test allow"]}
+        _Handler.quote_header = None
 
     def payment(self) -> PaymentQuote:
         return PaymentQuote(
@@ -125,6 +145,46 @@ class TestPayCheckAdapter(unittest.TestCase):
     def test_quote_validation_rejects_non_decimal_amount(self) -> None:
         with self.assertRaises(ValueError):
             PaymentQuote("https://api.example.test/v1/chat/", "0.02", "0xabc")
+
+    def test_fetch_payment_quote_parses_unpaid_x402_header(self) -> None:
+        url = f"{self.api_url}/v1/completions"
+        payload = {
+            "x402Version": 2,
+            "resource": {"url": url},
+            "accepts": [{
+                "scheme": "exact",
+                "network": "eip155:8453",
+                "amount": "20000",
+                "payTo": "0xabc",
+                "asset": "0xusdc",
+            }],
+        }
+        _Handler.quote_header = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        quote = fetch_payment_quote(url, network="eip155:8453")
+        self.assertEqual(quote, PaymentQuote(url, "20000", "0xabc", "eip155:8453"))
+        self.assertNotIn("x-payment", _Handler.requests[0][1])
+
+    def test_quote_parser_rejects_resource_mismatch(self) -> None:
+        payload = {
+            "x402Version": 2,
+            "resource": {"url": "https://other.example.test/v1/completions"},
+            "accepts": [{"scheme": "exact", "network": "eip155:8453", "amount": "1", "payTo": "0xabc"}],
+        }
+        header = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+        with self.assertRaisesRegex(QuoteError, "resource URL"):
+            payment_quote_from_header("https://api.example.test/v1/completions", header)
+
+    def test_quote_fetch_rejects_missing_payment_required_header(self) -> None:
+        with self.assertRaisesRegex(QuoteError, "PAYMENT-REQUIRED"):
+            fetch_payment_quote(f"{self.api_url}/v1/completions")
+
+    def test_quote_fetch_does_not_follow_redirects(self) -> None:
+        with self.assertRaisesRegex(QuoteError, "HTTP 302"):
+            fetch_payment_quote(f"{self.api_url}/redirect")
+
+    def test_quote_parser_rejects_invalid_base64(self) -> None:
+        with self.assertRaisesRegex(QuoteError, "invalid PAYMENT-REQUIRED"):
+            payment_quote_from_header("https://api.example.test/v1/completions", "%%%")
 
 
 if __name__ == "__main__":

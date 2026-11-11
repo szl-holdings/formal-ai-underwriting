@@ -16,19 +16,30 @@ SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import json
 import sys
 from dataclasses import dataclass
 from typing import Any, Mapping
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 
 DEFAULT_API_URL = "https://lumierepaycheck.org"
 USER_AGENT = "formal-ai-underwriting-paycheck/0.1.0"
 MAX_RESPONSE_BYTES = 256 * 1024
+MAX_REQUEST_BYTES = 1024 * 1024
 _OUTCOMES = {"allow", "deny", "review", "error"}
+
+
+class _NoRedirectHandler(HTTPRedirectHandler):
+    def redirect_request(self, *_args: Any, **_kwargs: Any) -> None:
+        return None
+
+
+_QUOTE_OPENER = build_opener(_NoRedirectHandler)
 
 
 @dataclass(frozen=True)
@@ -66,6 +77,127 @@ class PaymentQuote:
         if self.network:
             payload["network"] = self.network
         return payload
+
+
+class QuoteError(ValueError):
+    """Raised when an endpoint does not provide a usable x402 quote."""
+
+
+def _decode_payment_required(header_value: str) -> Any:
+    if not isinstance(header_value, str) or not header_value.strip():
+        raise QuoteError("endpoint returned an empty PAYMENT-REQUIRED header")
+    try:
+        encoded = header_value.strip()
+        padding = "=" * (-len(encoded) % 4)
+        raw = base64.b64decode((encoded + padding).encode("ascii"), altchars=b"-_", validate=True)
+    except (UnicodeEncodeError, ValueError, binascii.Error) as error:
+        raise QuoteError("endpoint returned an invalid PAYMENT-REQUIRED header") from error
+    if len(raw) > MAX_RESPONSE_BYTES:
+        raise QuoteError("PAYMENT-REQUIRED header exceeded the size limit")
+    try:
+        return json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise QuoteError("endpoint returned non-JSON PAYMENT-REQUIRED data") from error
+
+
+def payment_quote_from_header(
+    url: str,
+    header_value: str,
+    *,
+    network: str | None = None,
+) -> PaymentQuote:
+    """Parse one x402 v2 ``PAYMENT-REQUIRED`` header without accepting payment data."""
+
+    parsed_url = urlsplit(url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise QuoteError("url must be an absolute HTTP(S) URL")
+    payload = _decode_payment_required(header_value)
+    if not isinstance(payload, dict) or payload.get("x402Version") != 2:
+        raise QuoteError("endpoint did not return an x402 v2 quote")
+    resource = payload.get("resource")
+    if not isinstance(resource, dict) or resource.get("url") != url:
+        raise QuoteError("x402 quote resource URL does not match the requested URL")
+    accepts = payload.get("accepts")
+    if not isinstance(accepts, list) or not accepts:
+        raise QuoteError("x402 quote has no payment options")
+    candidates = []
+    for option in accepts:
+        if not isinstance(option, dict) or option.get("scheme") != "exact":
+            continue
+        if network is not None and option.get("network") != network:
+            continue
+        candidates.append(option)
+    if len(candidates) != 1:
+        if not candidates:
+            detail = f" for network {network!r}" if network else ""
+            raise QuoteError(f"x402 quote has no exact payment option{detail}")
+        raise QuoteError("x402 quote has multiple exact payment options; specify a network")
+    option = candidates[0]
+    amount = option.get("amount")
+    pay_to = option.get("payTo")
+    selected_network = option.get("network")
+    if not isinstance(amount, str) or not amount.isdigit():
+        raise QuoteError("x402 quote amount must be a non-negative decimal string")
+    if not isinstance(pay_to, str) or not pay_to.strip():
+        raise QuoteError("x402 quote payTo must be non-empty")
+    if not isinstance(selected_network, str) or not selected_network:
+        raise QuoteError("x402 quote network must be a non-empty string")
+    return PaymentQuote(url, amount, pay_to, selected_network)
+
+
+def fetch_payment_quote(
+    url: str,
+    *,
+    network: str | None = None,
+    method: str = "GET",
+    data: bytes | None = None,
+    headers: Mapping[str, str] | None = None,
+    timeout: float = 8.0,
+) -> PaymentQuote:
+    """Fetch and parse a quote without sending a payment or reading a response body.
+
+    The request is unpaid. A redirect to a different URL, a missing or malformed
+    x402 header, and every HTTP status other than 402 fail closed.
+    """
+
+    if timeout <= 0:
+        raise ValueError("timeout must be positive")
+    parsed_url = urlsplit(url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
+        raise ValueError("url must be an absolute HTTP(S) URL")
+    if not isinstance(method, str) or not method.strip() or not method.strip().isalpha():
+        raise ValueError("method must be a non-empty string")
+    if data is not None and not isinstance(data, bytes):
+        raise ValueError("data must be bytes when supplied")
+    if data is not None and len(data) > MAX_REQUEST_BYTES:
+        raise ValueError("request body exceeded the size limit")
+    request_headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
+    if headers is not None:
+        if not isinstance(headers, Mapping):
+            raise ValueError("headers must be a mapping")
+        for key, value in headers.items():
+            if not isinstance(key, str) or not isinstance(value, str):
+                raise ValueError("headers must contain string names and values")
+            if key.casefold() in {"x-payment", "payment-signature"}:
+                raise ValueError("fetch_payment_quote never accepts a payment header")
+            request_headers[key] = value
+    request = Request(url, data=data, headers=request_headers, method=method.upper())
+    try:
+        with _QUOTE_OPENER.open(request, timeout=timeout) as response:
+            status = int(response.status)
+            response_url = response.geturl()
+            header_value = response.headers.get("PAYMENT-REQUIRED")
+    except HTTPError as error:
+        status = error.code
+        response_url = error.geturl()
+        header_value = error.headers.get("PAYMENT-REQUIRED")
+    except (OSError, URLError, TimeoutError) as error:
+        raise QuoteError(f"could not reach x402 endpoint: {error.__class__.__name__}") from error
+    if response_url != url:
+        raise QuoteError("x402 endpoint redirected to a different URL")
+    if status != 402:
+        raise QuoteError(f"x402 endpoint answered HTTP {status}, expected 402")
+    return payment_quote_from_header(url, header_value, network=network)
 
 
 @dataclass(frozen=True)

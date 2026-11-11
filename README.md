@@ -29,8 +29,9 @@ szl-holdings repositories and services; this repository does not implement or ve
 [Proof boundary](#proof-boundary)).
 
 The optional [`payments.paycheck`](docs/paycheck.md) adapter adds a standard-library-only, fail-closed preflight for
-callers that already have an x402 quote. It checks the exact endpoint, amount, payout wallet and network before a
-caller signs a payment. It does not sign or submit payments and does not change certification evidence.
+x402 callers. It can read an unpaid `402 PAYMENT-REQUIRED` quote, checks the exact endpoint, amount, payout wallet
+and network, and blocks signing unless PayCheck explicitly allows the payment. It does not sign or submit payments
+and does not change certification evidence.
 
 ## What we certify
 
@@ -140,7 +141,7 @@ OpenAI can't retrofit provenance into GPT-4. Anthropic's Constitutional AI is pr
 - [x] Khipu receipt-chain operational
 - [x] Lean 4 locked-8 kernel frozen
 - [x] Doctrine abstention eval pipeline proven (2 full cycles)
-- [x] x402 monetization on Cloudflare: 4 of 17 gateway rules enabled (a-11-oy.com: 4 of 15; a11oy.net: 0 of 2), per the rules export of 2026-11-06 with the 16:27 UTC change log applied ([prices](docs/pricing.md))
+- [x] x402 monetization on Cloudflare: 4 of 17 gateway rules enabled (a-11-oy.com: 4 of 15; a11oy.net: 0 of 2), per the fresh rules readback of 2026-11-11 at 16:40 UTC ([prices](docs/pricing.md))
 - [x] 17+ models trained with proof receipts
 - [x] First certification report template ([templates/certification-report.md](templates/certification-report.md))
 - [ ] First pilot customer (pharma or legal)
