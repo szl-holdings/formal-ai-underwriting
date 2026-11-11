@@ -4,19 +4,17 @@ The `payments.paycheck` module adds a fail-closed check before an existing x402
 caller signs a payment. It uses Python's standard library and does not add a
 runtime dependency or a wallet implementation.
 
-The caller supplies the exact endpoint URL, amount, payout wallet and network
-from the 402 quote. The adapter sends those fields to Lumière PayCheck and
-returns an allow, deny, review or error decision. Only an explicit allow clears
-the gate.
+The adapter can fetch the exact quote from an unpaid x402 request, or accept a
+quote that an existing x402 client already parsed. It sends the endpoint URL,
+amount, payout wallet and network to Lumière PayCheck and returns an allow,
+deny, review or error decision. Only an explicit allow clears the gate.
 
 ```python
-from payments.paycheck import PaymentQuote, check_payment, require_allow
+from payments.paycheck import fetch_payment_quote, check_payment, require_allow
 
-quote = PaymentQuote(
-    url="https://api.example.com/v1/chat/",
-    amount="20000",          # atomic USDC units
-    pay_to="0x…",             # exact payout wallet from the quote
-    network="eip155:8453",    # Base
+quote = fetch_payment_quote(
+    "https://api.example.com/v1/chat/",
+    network="eip155:8453",
 )
 
 decision = check_payment(
@@ -33,6 +31,13 @@ require_allow(decision)
 
 # Call the existing x402 signer only after the gate returns.
 ```
+
+`fetch_payment_quote` sends the unpaid request, reads only the x402 v2
+`PAYMENT-REQUIRED` header, and never reads a model response body. It rejects a
+redirect, a quote for another URL, a non-`exact` payment scheme, an ambiguous
+network, or a malformed header. If the caller already has the quote, construct
+`PaymentQuote` directly and use the same `check_payment` and `require_allow`
+functions.
 
 The adapter never signs or submits a payment. It never receives a prompt or a
 model response. It fails closed on a timeout, transport error, HTTP error,
