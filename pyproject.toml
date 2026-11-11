@@ -47,10 +47,13 @@ Homepage = "https://a-11-oy.com"
 Source = "https://github.com/szl-holdings/formal-ai-underwriting"
 Issues = "https://github.com/szl-holdings/formal-ai-underwriting/issues"
 
+[project.scripts]
+szl-paycheck-preflight = "payments.paycheck:main"
+
 [tool.setuptools]
-# Ship the one importable package. `packages = []` (the previous value) built
-# a wheel with no code in it.
-packages = ["certification"]
+# Ship the executable packages. `packages = []` (the previous value) built a
+# wheel with no code in it.
+packages = ["certification", "payments"]
 
 [tool.ruff]
 line-length = 120
