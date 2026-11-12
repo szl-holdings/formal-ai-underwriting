@@ -13,9 +13,9 @@
 [Product](https://a-11-oy.com) · [Proof](https://a11oy.net) · [GitHub organization](https://github.com/szl-holdings)
 <!-- /szl:header -->
 
-**The UL certification for AI: provably auditable models as a service.**
+**Auditable AI models as a service: signed training-data receipts plus Lean-checked receipt formulas.** (No third-party certification is claimed.)
 
-> We're the only company that can prove — with machine-checked math and cryptographic receipts — exactly what a model was trained on, what it will refuse to do, and when it expires. We're not competing with OpenAI. We're becoming the regulatory standard they'll have to comply with.
+> We aim to make it checkable what a model was trained on (signed receipts), which refusal policy it was evaluated against (measured, with sample sizes), and when its policy expiry is set. Lean proofs cover the locked receipt formulas, not model behaviour.
 
 ## What this repository is
 
