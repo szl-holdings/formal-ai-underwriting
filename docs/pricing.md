@@ -38,7 +38,8 @@ its own credential has not been verified, so this page makes no "no API key" pro
 ## Settlement
 
 Payments settle to the pay-to address on every gateway rule:
-`0x50E9B335ac233fcc5e87404367E7De253A63D460` (network `eip155:8453`, USDC).
+`0x7b133ef996852c223379d6d1245430300970291A` (network `eip155:8453`, USDC).
+Cloudflare payment rules were switched to this address on 2026-11-12.
 
 ## Proof receipts
 
