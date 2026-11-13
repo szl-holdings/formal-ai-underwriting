@@ -19,7 +19,7 @@
 
 ## What this repository is
 
-Formal AI Underwriting is SZL Holdings' model-certification offer. This repository holds its product
+Formal AI Underwriting is SZL Holdings' model-assurance specification. This repository holds its product
 specification — the standard below, the [certification report template](templates/certification-report.md),
 [pricing](docs/pricing.md), the [OpenAPI description](docs/openapi.yaml) of the x402-metered inference API and an
 [ISO/IEC 42001 mapping](docs/iso42001-audit-package.md) — plus one executable, standard-library-only Python module,
@@ -132,7 +132,7 @@ This stack requires:
 - Doctrine abstention training pipeline (proven through 2+ eval cycles)
 - x402 monetization infrastructure (live on Cloudflare)
 
-OpenAI can't retrofit provenance into GPT-4. Anthropic's Constitutional AI is prompting, not verification. NVIDIA sells GPUs, not AI auditing.
+Comparisons with other vendors are omitted until they can be cited to primary sources.
 
 **This is a new category. We define the standard before regulators force it.**
 
