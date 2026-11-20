@@ -81,6 +81,24 @@ class TestFailClosed(unittest.TestCase):
             with self.subTest(errors=errors, n=n), self.assertRaises(ValueError):
                 certify_risk(errors=errors, n=n)
 
+    def test_extreme_positive_delta_is_finite_without_reciprocal_overflow(self):
+        # 1/delta overflows at 1e-320, but -log(delta) remains finite.
+        delta = 1e-320
+        r = certify_risk(errors=0, n=100, delta=delta)
+        self.assertTrue(math.isfinite(r["hoeffding_bound"]))
+        self.assertTrue(math.isfinite(r["pac_bayes_bound_kl0"]))
+        self.assertAlmostEqual(
+            r["hoeffding_bound"], math.sqrt(-math.log(delta) / (2 * 100)), places=12
+        )
+        self.assertGreater(r["pac_bayes_bound_kl0"], r["hoeffding_bound"])
+        # Underflow-safe exp rounds a subnormal tail probability close to delta.
+        self.assertAlmostEqual(r["hoeffding_detail"]["bound"] / delta, 1.0, places=2)
+
+    def test_hoeffding_tail_rejects_positive_infinity_not_zero_probability(self):
+        # +inf previously emitted 0.0 under a PROVEN(...) label.
+        with self.assertRaises(ValueError):
+            hoeffding_tail(math.inf, 10)
+
     def test_hoeffding_tail_rejects_nan_and_negative_t(self):
         # hoeffding_tail(nan, n) used to return a NaN "bound" labelled PROVEN
         for t in (math.nan, -0.1, True, "0.1"):
