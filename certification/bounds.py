@@ -61,7 +61,9 @@ def pac_bayes_mcallester(empirical_risk: float, kl: float, n: int, delta: float)
         raise ValueError("kl must be >= 0")
     if not (0.0 < delta < 1.0):
         raise ValueError("delta must be in (0,1)")
-    complexity = (kl + math.log(2.0 * math.sqrt(n) / delta)) / (2.0 * n)
+    # Log the factors separately: 2*sqrt(n)/delta can overflow for a valid
+    # tiny positive delta even when the logarithm and bound are finite.
+    complexity = (kl + math.log(2.0) + 0.5 * math.log(n) - math.log(delta)) / (2.0 * n)
     if not (math.isfinite(complexity) and complexity > 0.0):
         raise ValueError("complexity term must be positive and finite")
     value = empirical_risk + math.sqrt(complexity)
@@ -83,7 +85,8 @@ def hoeffding_tail(t: float, n: int) -> dict:
     PROOF-STATUS: PROVEN(MomentSubGaussian) — carried verbatim from the source
     atlas; the Lean proof is conditional on the axiom MomentSubGaussian.
     """
-    if not _real(t) or math.isnan(t) or t < 0:
+    # Positive infinity is not a finite deviation; do not label exp(-inf)=0 PROVEN.
+    if not _real(t) or not math.isfinite(t) or t < 0:
         raise ValueError("t must be a non-negative real (NaN is not a number)")
     if not isinstance(n, int) or isinstance(n, bool) or n <= 0:
         raise ValueError("n must be a positive int")
@@ -120,7 +123,8 @@ def certify_risk(errors: int, n: int, delta: float = 0.05) -> dict:
     emp = errors / n
     # Hoeffding: with confidence 1-delta, true risk <= emp + t where
     # exp(-2*n*t^2) = delta  =>  t = sqrt(ln(1/delta) / (2n))
-    t = math.sqrt(math.log(1.0 / delta) / (2.0 * n))
+    # Avoid overflow in 1/delta for subnormal but valid confidence levels.
+    t = math.sqrt(-math.log(delta) / (2.0 * n))
     hoeffding = hoeffding_tail(t, n)
     pac = pac_bayes_mcallester(emp, kl=0.0, n=n, delta=delta)
     return {
